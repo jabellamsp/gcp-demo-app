@@ -1,0 +1,31 @@
+steps:
+  # Step 1: Authenticate using Workload Identity Federation (no keys!)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud auth configure-docker
+        gcloud config set project ${_PROJECT_ID}
+
+  # Step 2: Run Terraform with Application Default Credentials (ADC)
+  - name: 'hashicorp/terraform:1.9.0'
+    env:
+      - 'CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE='  # Clear any old creds
+    args: ['version']
+
+  - name: 'hashicorp/terraform:1.9.0'
+    args: ['init']
+
+  - name: 'hashicorp/terraform:1.9.0'
+    args: ['validate']
+
+  - name: 'hashicorp/terraform:1.9.0'
+    args: ['apply', '-auto-approve', '-var=project_id=${_PROJECT_ID}']
+
+options:
+  # This enables Cloud Build to use its own identity + impersonation
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _PROJECT_ID: youai-sandbox
